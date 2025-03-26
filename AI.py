@@ -1,109 +1,89 @@
 import json
-from direct.showbase.ShowBase import ShowBase
-from panda3d.core import PointLight, AmbientLight
+import streamlit as st
 import pyttsx3
 import google.generativeai as genai
+from panda3d.core import loadPrcFileData
+from direct.showbase.ShowBase import ShowBase
+
+# Configure Panda3D to run in headless mode
+loadPrcFileData("", "window-type none")  # Prevents window creation
+loadPrcFileData("", "audio-library-name null")  # Optional: Disables sound
 
 # Configure Gemini AI
 GEMINI_API_KEY = "AIzaSyCJ6a-YymLZ0RQUpO87JVTbtWcBnBixO88"
 genai.configure(api_key=GEMINI_API_KEY)
 
+# Load student data
+def load_student_data(filename="students.json"):
+    try:
+        with open(filename, "r") as file:
+            data = json.load(file)
+            if isinstance(data, list):
+                return data
+            else:
+                st.error("Invalid JSON format. Expected a list of students.")
+                return []
+    except FileNotFoundError:
+        st.error("Student data file not found.")
+    except json.JSONDecodeError:
+        st.error("Error decoding student data. Ensure the JSON file is correctly formatted.")
+    return []
+
+# Calculate student average
+def calculate_average(student_name, student_data):
+    student = next((s for s in student_data if s["name"].lower() == student_name.lower()), None)
+    if student:
+        marks = list(student.get("subjects", {}).values())
+        if marks:
+            return sum(marks) / len(marks)
+    return None
+
+# Fetch AI-generated response
+def get_gemini_answer(question):
+    try:
+        model = genai.GenerativeModel("models/gemini-1.5-flash-001")
+        response = model.generate_content(question)
+        return response.candidates[0].content.parts[0].text.strip()
+    except Exception as e:
+        return f"Error fetching answer: {e}"
+
+# Text-to-speech
+def speak(text):
+    engine = pyttsx3.init()
+    engine.say(text)
+    engine.runAndWait()
+
+# Streamlit UI
+st.title("🤖 AI Teacher Bot")
+st.subheader("An AI-powered assistant for students!")
+
+student_data = load_student_data()
+student_name = st.text_input("Enter your name:")
+
+if student_name:
+    avg_marks = calculate_average(student_name, student_data)
+    if avg_marks is not None:
+        feedback = f"Hello {student_name}, your average score is {avg_marks:.2f}. Keep learning and improving!"
+    else:
+        feedback = f"Hello {student_name}, I couldn't find your records. Keep working hard!"
+    
+    st.success(feedback)
+    speak(feedback)
+    
+    if st.checkbox("Do you have any doubts?"):
+        question = st.text_area("What is your doubt?")
+        if st.button("Ask AI"):
+            if question.strip():
+                answer = get_gemini_answer(question)
+                st.info(answer)
+                speak(answer)
+            else:
+                st.warning("Please enter a valid question.")
+
+# Initialize AI Robot class in headless mode
 class AIRobot(ShowBase):
     def __init__(self):
-        ShowBase.__init__(self)
-        
-        # Load the 3D robot model (Ensure a valid .glb, .obj, or .bam file)
-        self.robot = self.loader.loadModel("robot_model.glb")  
-        self.robot.reparentTo(self.render)
-        self.robot.setScale(2)
-        self.robot.setPos(0, 10, 0)
-        
-        # Add lighting
-        self.setupLights()
-        
-        # Initialize text-to-speech
-        self.engine = pyttsx3.init()
-        
-        # Load student data from JSON
-        self.student_data = self.load_student_data()
+        ShowBase.__init__(self)  # Initializes Panda3D in headless mode
+        print("Panda3D running in headless mode")
 
-        # Ask for student name and feedback
-        self.get_student_feedback()
-
-    def setupLights(self):
-        """Setup ambient and point lighting."""
-        ambientLight = AmbientLight("ambientLight")
-        ambientLight.setColor((0.5, 0.5, 0.5, 1))
-        self.render.setLight(self.render.attachNewNode(ambientLight))
-        
-        pointLight = PointLight("pointLight")
-        pointLight.setColor((1, 1, 1, 1))
-        pointLightNode = self.render.attachNewNode(pointLight)
-        pointLightNode.setPos(5, -5, 10)
-        self.render.setLight(pointLightNode)
-
-    def load_student_data(self):
-        """Load student data from JSON file."""
-        try:
-            with open("students.json", "r") as file:
-                return json.load(file)
-        except Exception as e:
-            print(f"Error loading student data: {e}")
-            return []
-
-    def speak(self, text):
-        """Makes the robot speak and move its mouth."""
-        print("🤖 AI says:", text)
-        
-        self.robot.setHpr(10, 0, 0)  # Slight head tilt while speaking
-        self.engine.say(text)
-        self.engine.runAndWait()
-        self.robot.setHpr(0, 0, 0)  # Reset position
-    
-    def calculate_average(self, student_name):
-        """Calculate the average marks of a student from JSON data."""
-        for student in self.student_data:
-            if student["name"].lower() == student_name.lower():
-                marks = list(student["subjects"].values())  # Extract subject scores
-                avg_marks = sum(marks) / len(marks)
-                return avg_marks
-        return None
-
-    def get_gemini_answer(self, question):
-        """Fetches answer from Gemini AI with improved error handling."""
-        try:
-            model = genai.GenerativeModel("models/gemini-1.5-flash-001")
-            response = model.generate_content(question)
-
-            # Check if response is valid
-            if response and response.candidates:
-                if response.candidates[0].content.parts:
-                    return response.candidates[0].content.parts[0].text.strip()
-            
-            return "Sorry, I couldn't generate an appropriate response. Try rephrasing your question."
-        
-        except Exception as e:
-            return f"Error fetching answer: {e}"
-
-    def get_student_feedback(self):
-        """Ask for student name and provide feedback."""
-        student_name = input("Enter your name: ").strip()
-        
-        avg_marks = self.calculate_average(student_name)
-        if avg_marks is not None:
-            feedback = f"Hello {student_name}, your average score is {avg_marks:.2f}. Keep learning and improving!"
-        else:
-            feedback = f"Hello {student_name}, I couldn't find your records. Keep working hard!"
-        
-        self.speak(feedback)
-        
-        if input("Do you have any doubts? (yes/no): ").strip().lower() == "yes":
-            question = input("What is your doubt? ")
-            answer = self.get_gemini_answer(question)
-            self.speak(answer)
-        else:
-            self.speak("Great! Have a wonderful day!")
-
-if __name__ == "__main__":
-    app = AIRobot()
-    app.run()
+app = AIRobot()
