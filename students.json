@@ -1,0 +1,24 @@
+[
+    {
+        "name": "Sarvesh Balaji",
+        "subjects": {
+            "Mathematics": 100,
+            "Science": 95,
+            "English": 90,
+            "Social Studies": 85,
+            "Computer Science": 98
+        }
+    },
+    {
+        "name": "Varshini",
+        "subjects": {
+            "Mathematics": 85,
+            "Science": 80,
+            "English": 75,
+            "Social Studies": 88,
+            "Computer Science": 90
+        }
+    }
+]
+
+
