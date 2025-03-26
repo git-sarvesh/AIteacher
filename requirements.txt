@@ -1,4 +1,4 @@
 streamlit
 pyttsx3
 google-generativeai
-ShowBase
+panda3d
