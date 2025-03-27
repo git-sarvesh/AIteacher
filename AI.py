@@ -25,7 +25,6 @@ class AIRobot(ShowBase):
         else:
             pass  # Reuse existing instance
 
-
 # ----------- Student Data Handling -----------------
 def load_student_data(filename="students.json"):
     try:
@@ -60,9 +59,12 @@ def get_gemini_answer(question):
         return f"Error fetching answer: {e}"
 
 def speak(text):
-    engine = pyttsx3.init()
-    engine.say(text)
-    engine.runAndWait()
+    try:
+        engine = pyttsx3.init(driverName='sapi5')  # Force use of Windows speech engine
+        engine.say(text)
+        engine.runAndWait()
+    except Exception as e:
+        st.error(f"❌ Text-to-speech failed: {e}")
 
 # ----------- Streamlit UI --------------------------
 st.title("🤖 AI Teacher Bot")
