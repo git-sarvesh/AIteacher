@@ -1,6 +1,8 @@
 import json
 import streamlit as st
 import pyttsx3
+from gtts import gTTS
+import os
 import google.generativeai as genai
 from panda3d.core import loadPrcFileData
 from direct.showbase.ShowBase import ShowBase
@@ -65,6 +67,12 @@ def speak(text):
         engine.runAndWait()
     except Exception as e:
         st.error(f"❌ Text-to-speech failed: {e}")
+        try:
+            tts = gTTS(text)
+            tts.save("temp.mp3")
+            os.system("start temp.mp3")  # For Windows
+        except Exception as fallback_err:
+            st.error(f"❌ Fallback TTS also failed: {fallback_err}")
 
 # ----------- Streamlit UI --------------------------
 st.title("🤖 AI Teacher Bot")
@@ -96,4 +104,3 @@ if student_name:
 # ----------- Initialize AIRobot Singleton -----------
 if 'air_robot' not in st.session_state:
     st.session_state.air_robot = AIRobot()
-
