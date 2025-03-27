@@ -2,3 +2,4 @@ streamlit
 pyttsx3
 google-generativeai
 panda3d
+gTTS
