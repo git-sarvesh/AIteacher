@@ -2,7 +2,6 @@ import json
 import streamlit as st
 import pyttsx3
 from gtts import gTTS
-
 import os
 import google.generativeai as genai
 from panda3d.core import loadPrcFileData
@@ -20,13 +19,16 @@ genai.configure(api_key=GEMINI_API_KEY)
 class AIRobot(ShowBase):
     _instance = None
 
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(AIRobot, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self):
-        if AIRobot._instance is None:
-            AIRobot._instance = self
-            ShowBase.__init__(self)  # Initialize Panda3D
+        if not hasattr(self, "initialized"):  # Prevent multiple initializations
+            ShowBase.__init__(self)
+            self.initialized = True
             print("✅ Panda3D running in headless mode")
-        else:
-            pass  # Reuse existing instance
 
 # ----------- Student Data Handling -----------------
 def load_student_data(filename="students.json"):
