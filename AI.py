@@ -8,12 +8,12 @@ from panda3d.core import loadPrcFileData
 from direct.showbase.ShowBase import ShowBase
 import pygame  # Replacing playsound
 
+# Load API Key from environment variable
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
+    raise ValueError("API Key not found. Set GEMINI_API_KEY as an environment variable.")
 
-loadPrcFileData("", "window-type none")  
-loadPrcFileData("", "audio-library-name null") 
-
-
-GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+print("API Key loaded successfully!")
 
 genai.configure(api_key=GEMINI_API_KEY)
 
