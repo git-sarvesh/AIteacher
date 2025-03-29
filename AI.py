@@ -7,15 +7,28 @@ import google.generativeai as genai
 from panda3d.core import loadPrcFileData
 from direct.showbase.ShowBase import ShowBase
 import pygame  # Replacing playsound
+import logging
+from dotenv import load_dotenv
 
-# Load API Key from environment variable
+# Load environment variables
+load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
     raise ValueError("API Key not found. Set GEMINI_API_KEY as an environment variable.")
 
-print("API Key loaded successfully!")
+# Configure Logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.info("API Key loaded successfully!")
 
 genai.configure(api_key=GEMINI_API_KEY)
+
+# Load Panda3D in headless mode
+loadPrcFileData("", "window-type none")  
+loadPrcFileData("", "audio-library-name null")  
+
+def is_headless():
+    """Detect if running in a headless environment."""
+    return os.environ.get("DISPLAY") is None
 
 # ----------- Singleton Wrapper for AIRobot -------------
 class AIRobot(ShowBase):
@@ -31,7 +44,7 @@ class AIRobot(ShowBase):
             try:
                 super().__init__()
                 self.initialized = True
-                print("✅ Panda3D running in headless mode")
+                logging.info("✅ Panda3D running in headless mode")
             except Exception as e:
                 st.warning(f"⚠️ Panda3D initialization failed: {e}")
 
@@ -43,8 +56,17 @@ def load_student_data(filename="students.json"):
             data = json.load(file)
             return data if isinstance(data, list) else []
     except (FileNotFoundError, json.JSONDecodeError) as e:
-        st.error(f"Error loading student data: {e}")
+        logging.error(f"Error loading student data: {e}")
         return []
+
+def save_student_data(data, filename="students.json"):
+    """Saves student data back to the JSON file."""
+    try:
+        with open(filename, "w") as file:
+            json.dump(data, file, indent=4)
+        logging.info("Student data saved successfully!")
+    except Exception as e:
+        logging.error(f"Error saving student data: {e}")
 
 def calculate_average(student_name, student_data):
     """Calculates the average marks for a student."""
@@ -62,10 +84,14 @@ def get_gemini_answer(question):
         response = model.generate_content(question)
         return response.text.strip()
     except Exception as e:
+        logging.error(f"Error fetching answer: {e}")
         return f"Error fetching answer: {e}"
 
 def speak(text):
     """Converts text to speech with pyttsx3 or gTTS as a fallback."""
+    if is_headless():
+        logging.warning("⚠️ Skipping voice output in headless mode.")
+        return
     try:
         engine = pyttsx3.init(driverName='sapi5')  # Use Windows speech engine
         voices = engine.getProperty('voices')  # Get available voices
@@ -85,7 +111,7 @@ def speak(text):
                 continue
             os.remove("temp.mp3")  # Cleanup
         except Exception as e:
-            st.error(f"❌ Both pyttsx3 and gTTS failed: {e}")
+            logging.error(f"❌ Both pyttsx3 and gTTS failed: {e}")
 
 # ----------- Streamlit UI --------------------------
 st.title("🤖 AI Teacher Bot")
@@ -115,4 +141,4 @@ if "air_robot" not in st.session_state:
     try:
         st.session_state.air_robot = AIRobot()
     except Exception as e:
-        st.error(f"❌ Failed to initialize AI Robot: {e}")
+        logging.error(f"❌ Failed to initialize AI Robot: {e}")
