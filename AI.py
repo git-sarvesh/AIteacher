@@ -6,6 +6,7 @@ import os
 import google.generativeai as genai
 from panda3d.core import loadPrcFileData
 from direct.showbase.ShowBase import ShowBase
+from playsound import playsound  # Better MP3 playback
 
 # Configure Panda3D to run in headless mode
 loadPrcFileData("", "window-type none")  # Prevents window creation
@@ -60,18 +61,23 @@ def get_gemini_answer(question):
         return f"Error fetching answer: {e}"
 
 def speak(text):
-    """Converts text to speech."""
+    """Converts text to speech with pyttsx3 or gTTS as a fallback."""
     try:
         engine = pyttsx3.init(driverName='sapi5')  # Use Windows speech engine
+        voices = engine.getProperty('voices')  # Get available voices
+        engine.setProperty('voice', voices[0].id)  # Use first voice
+        engine.setProperty('rate', 150)  # Adjust speech speed
         engine.say(text)
         engine.runAndWait()
-    except Exception:
+    except Exception as e:
+        st.warning("⚠️ pyttsx3 failed, switching to gTTS...")
         try:
             tts = gTTS(text)
             tts.save("temp.mp3")
-            os.system("start temp.mp3")  # Windows
+            playsound("temp.mp3")  # Plays sound without blocking UI
+            os.remove("temp.mp3")  # Cleanup
         except Exception as e:
-            st.error(f"❌ Text-to-speech failed: {e}")
+            st.error(f"❌ Both pyttsx3 and gTTS failed: {e}")
 
 # ----------- Streamlit UI --------------------------
 st.title("🤖 AI Teacher Bot")
@@ -87,14 +93,14 @@ if student_name:
                 f"Hello {student_name}, I couldn't find your records. Keep working hard!")
     
     st.success(feedback)
-    speak(feedback)
+    speak(feedback)  # ✅ Speak out the feedback
 
     if st.checkbox("Do you have any doubts?", key="doubt_checkbox"):  # ✅ Unique key added
         question = st.text_area("What is your doubt?", key="doubt_text_area")  # ✅ Unique key added
         if st.button("Ask AI", key="ask_ai_button") and question.strip():  # ✅ Unique key added
             answer = get_gemini_answer(question)
             st.info(answer)
-            speak(answer)
+            speak(answer)  # ✅ Speak out the AI answer
 
 # ----------- Initialize AIRobot Singleton -----------
 if "air_robot" not in st.session_state:
