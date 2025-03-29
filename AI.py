@@ -6,14 +6,14 @@ import os
 import google.generativeai as genai
 from panda3d.core import loadPrcFileData
 from direct.showbase.ShowBase import ShowBase
-from playsound import playsound  # Better MP3 playback
+import pygame  # Replacing playsound
 
 # Configure Panda3D to run in headless mode
 loadPrcFileData("", "window-type none")  # Prevents window creation
 loadPrcFileData("", "audio-library-name null")  # Disables sound
 
-# Configure Gemini AI
-GEMINI_API_KEY = "AIzaSyCJ6a-YymLZ0RQUpO87JVTbtWcBnBixO88"
+# Securely configure Gemini AI
+GEMINI_API_KEY = st.secrets["AIzaSyCk7OQZSk1a8nnSE1MHIHSlsd6UhE9bVmw"]  # Store key in Streamlit secrets
 genai.configure(api_key=GEMINI_API_KEY)
 
 # ----------- Singleton Wrapper for AIRobot -------------
@@ -27,9 +27,12 @@ class AIRobot(ShowBase):
 
     def __init__(self):
         if not hasattr(self, "initialized"):
-            super().__init__()
-            self.initialized = True
-            print("✅ Panda3D running in headless mode")
+            try:
+                super().__init__()
+                self.initialized = True
+                print("✅ Panda3D running in headless mode")
+            except Exception as e:
+                st.warning(f"⚠️ Panda3D initialization failed: {e}")
 
 # ----------- Student Data Handling -----------------
 def load_student_data(filename="students.json"):
@@ -56,7 +59,7 @@ def get_gemini_answer(question):
     try:
         model = genai.GenerativeModel("models/gemini-1.5-flash-001")
         response = model.generate_content(question)
-        return response.candidates[0].content.parts[0].text.strip()
+        return response.text.strip()
     except Exception as e:
         return f"Error fetching answer: {e}"
 
@@ -69,12 +72,16 @@ def speak(text):
         engine.setProperty('rate', 150)  # Adjust speech speed
         engine.say(text)
         engine.runAndWait()
-    except Exception as e:
+    except Exception:
         st.warning("⚠️ pyttsx3 failed, switching to gTTS...")
         try:
             tts = gTTS(text)
             tts.save("temp.mp3")
-            playsound("temp.mp3")  # Plays sound without blocking UI
+            pygame.mixer.init()
+            pygame.mixer.music.load("temp.mp3")
+            pygame.mixer.music.play()
+            while pygame.mixer.music.get_busy():
+                continue
             os.remove("temp.mp3")  # Cleanup
         except Exception as e:
             st.error(f"❌ Both pyttsx3 and gTTS failed: {e}")
