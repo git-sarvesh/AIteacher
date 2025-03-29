@@ -8,12 +8,13 @@ from panda3d.core import loadPrcFileData
 from direct.showbase.ShowBase import ShowBase
 import pygame  # Replacing playsound
 
-# Configure Panda3D to run in headless mode
-loadPrcFileData("", "window-type none")  # Prevents window creation
-loadPrcFileData("", "audio-library-name null")  # Disables sound
 
-# Securely configure Gemini AI
-GEMINI_API_KEY = st.secrets["AIzaSyCk7OQZSk1a8nnSE1MHIHSlsd6UhE9bVmw"]  # Store key in Streamlit secrets
+loadPrcFileData("", "window-type none")  
+loadPrcFileData("", "audio-library-name null") 
+
+
+GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+
 genai.configure(api_key=GEMINI_API_KEY)
 
 # ----------- Singleton Wrapper for AIRobot -------------
