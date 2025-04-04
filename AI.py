@@ -37,12 +37,13 @@ class AIRobot(ShowBase):
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             cls._instance = super(AIRobot, cls).__new__(cls)
+            cls._instance.init_panda3d()
         return cls._instance
 
-    def __init__(self):
+    def init_panda3d(self):
         if not hasattr(self, "initialized"):
             try:
-                super().__init__()
+                ShowBase.__init__(self)
                 self.initialized = True
                 logging.info("✅ Panda3D running in headless mode")
             except Exception as e:
