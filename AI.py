@@ -8,6 +8,7 @@ from panda3d.core import loadPrcFileData
 from direct.showbase.ShowBase import ShowBase
 from panda3d.core import AmbientLight, DirectionalLight, LVector3
 import pygame  # Replacing playsound
+import speech_recognition as sr
 import logging
 from dotenv import load_dotenv
 
@@ -133,6 +134,19 @@ def speak(text):
         except Exception as e:
             logging.error(f"❌ Both pyttsx3 and gTTS failed: {e}")
 
+def recognize_speech():
+    """Recognizes speech input using the microphone."""
+    recognizer = sr.Recognizer()
+    with sr.Microphone() as source:
+        st.info("Listening...")
+        try:
+            audio = recognizer.listen(source)
+            return recognizer.recognize_google(audio)
+        except sr.UnknownValueError:
+            return "Sorry, I couldn't understand that."
+        except sr.RequestError:
+            return "Speech recognition service is unavailable."
+
 # ----------- Streamlit UI --------------------------
 st.title("🤖 AI Teacher Bot")
 st.subheader("An AI-powered assistant for students!")
@@ -144,17 +158,16 @@ if student_name:
     avg_marks = calculate_average(student_name, student_data)
     feedback = f"Hello {student_name}, your average score is {avg_marks:.2f}. Keep learning!" if avg_marks is not None else f"Hello {student_name}, I couldn't find your records. Keep working hard!"
     
-    st.success(feedback)
+st.success(feedback)
     speak(feedback)
+    
+    if st.button("Ask Doubt by Voice", key="voice_input_button"):
+        question = recognize_speech()
+        st.text_area("Recognized Question:", question)
+        answer = get_gemini_answer(question, avg_marks)
+        st.info(answer)
+        speak(answer)
 
-    if st.checkbox("Do you have any doubts?", key="doubt_checkbox"):
-        question = st.text_area("What is your doubt?", key="doubt_text_area")
-        if st.button("Ask AI", key="ask_ai_button") and question.strip():
-            answer = get_gemini_answer(question, avg_marks)
-            st.info(answer)
-            speak(answer)
-
-# ----------- Initialize AI Robot Singleton -----------
 if "air_robot" not in st.session_state:
     try:
         st.session_state.air_robot = AIRobot()
