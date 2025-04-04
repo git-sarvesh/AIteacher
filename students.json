@@ -18,7 +18,15 @@
             "Social Studies": 88,
             "Computer Science": 90
         }
+    },
+    {
+        "name":"Simson",
+        "subject":{
+            "Mathematics": 85,
+            "Science": 80,
+            "English": 75,
+            "Social Studies": 88,
+            "Computer Science": 90
+        }
     }
 ]
-
-
