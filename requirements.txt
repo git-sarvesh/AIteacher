@@ -5,3 +5,7 @@ panda3d
 gTTS
 pygame
 python-dotenv
+numpy
+requests
+Pillow
+
