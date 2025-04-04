@@ -83,7 +83,7 @@ def get_gemini_answer(question, avg_marks):
         model = genai.GenerativeModel("models/gemini-1.5-flash-001")
         if avg_marks is None:
             prompt = f"Provide a general explanation for: {question}"
-        elif avg_marks < 60:
+        elif avg_marks < 50:
             prompt = f"Explain this in a short and simple way: {question}"
         else:
             prompt = f"Provide a detailed answer for: {question}"
