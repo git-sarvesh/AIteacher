@@ -77,11 +77,17 @@ def calculate_average(student_name, student_data):
     return None
 
 # ----------- AI Response + Voice -------------------
-def get_gemini_answer(question):
-    """Fetches an answer from Gemini AI."""
+def get_gemini_answer(question, avg_marks):
+    """Fetches an answer from Gemini AI, adjusting detail based on student performance."""
     try:
         model = genai.GenerativeModel("models/gemini-1.5-flash-001")
-        response = model.generate_content(question)
+        if avg_marks is None:
+            prompt = f"Provide a general explanation for: {question}"
+        elif avg_marks < 60:
+            prompt = f"Explain this in a short and simple way: {question}"
+        else:
+            prompt = f"Provide a detailed answer for: {question}"
+        response = model.generate_content(prompt)
         return response.text.strip()
     except Exception as e:
         logging.error(f"Error fetching answer: {e}")
@@ -132,7 +138,7 @@ if student_name:
     if st.checkbox("Do you have any doubts?", key="doubt_checkbox"):  # ✅ Unique key added
         question = st.text_area("What is your doubt?", key="doubt_text_area")  # ✅ Unique key added
         if st.button("Ask AI", key="ask_ai_button") and question.strip():  # ✅ Unique key added
-            answer = get_gemini_answer(question)
+            answer = get_gemini_answer(question, avg_marks)
             st.info(answer)
             speak(answer)  # ✅ Speak out the AI answer
 
