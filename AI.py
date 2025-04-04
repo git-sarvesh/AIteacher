@@ -157,8 +157,7 @@ student_name = st.text_input("Enter your name:", key="student_name_input")
 if student_name:
     avg_marks = calculate_average(student_name, student_data)
     feedback = f"Hello {student_name}, your average score is {avg_marks:.2f}. Keep learning!" if avg_marks is not None else f"Hello {student_name}, I couldn't find your records. Keep working hard!"
-    
-st.success(feedback)
+    st.success(feedback)
     speak(feedback)
     
     if st.button("Ask Doubt by Voice", key="voice_input_button"):
