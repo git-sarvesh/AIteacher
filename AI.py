@@ -9,9 +9,11 @@ import pygame
 import logging
 from PIL import Image
 import pytesseract
+import platform
 
-# Configure Tesseract path if needed (change this path to where Tesseract is installed)
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+# ----------- Tesseract Path Configuration (Only for Windows) ------------
+if platform.system() == "Windows":
+    pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 # Load .env and API Key
 load_dotenv()
