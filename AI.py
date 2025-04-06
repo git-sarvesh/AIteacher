@@ -40,10 +40,18 @@ def calculate_average(student_name, student_data):
 def get_gemini_answer(question, avg_marks):
     try:
         model = genai.GenerativeModel("models/gemini-1.5-flash-001")
-        if avg_marks is None or avg_marks < 50:
-            prompt = f"Explain this in a simple and short way: {question}"
+
+        if avg_marks is None:
+            prompt = f"Answer the following question briefly: {question}"
+        elif avg_marks < 50:
+            prompt = (
+                f"This student has low scores. Explain this in a very simple, beginner-friendly way:\n{question}"
+            )
         else:
-            prompt = f"Explain this in detail: {question}"
+            prompt = (
+                f"This student has good scores. Provide a detailed, technical explanation:\n{question}"
+            )
+
         response = model.generate_content(prompt)
         return response.text.strip()
     except Exception as e:
@@ -72,7 +80,7 @@ def speak(text):
 # ----------- Streamlit UI ---------------------------
 st.set_page_config(page_title="AI Teacher Bot", page_icon="🤖")
 st.title("🤖 AI Teacher Bot")
-st.subheader("Ask doubts and learn with your AI teacher!")
+st.subheader("Ask your doubt and get help based on your performance!")
 
 student_data = load_student_data()
 student_name = st.text_input("Enter your name:")
