@@ -7,6 +7,11 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 import pygame
 import logging
+from PIL import Image
+import pytesseract
+
+# Configure Tesseract path if needed (change this path to where Tesseract is installed)
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 # Load .env and API Key
 load_dotenv()
@@ -40,17 +45,12 @@ def calculate_average(student_name, student_data):
 def get_gemini_answer(question, avg_marks):
     try:
         model = genai.GenerativeModel("models/gemini-1.5-flash-001")
-
         if avg_marks is None:
-            prompt = f"Answer the following question briefly: {question}"
+            prompt = f"Answer briefly: {question}"
         elif avg_marks < 50:
-            prompt = (
-                f"This student has low scores. Explain this in a very simple, beginner-friendly way:\n{question}"
-            )
+            prompt = f"This student is weak. Explain simply and slowly: {question}"
         else:
-            prompt = (
-                f"This student has good scores. Provide a detailed, technical explanation:\n{question}"
-            )
+            prompt = f"This student is strong. Provide a deep and detailed explanation: {question}"
 
         response = model.generate_content(prompt)
         return response.text.strip()
@@ -77,10 +77,19 @@ def speak(text):
         except Exception as e:
             logging.error(f"TTS failed: {e}")
 
+# ----------- Extract Text from Image ----------------
+def extract_text_from_image(image_file):
+    try:
+        img = Image.open(image_file)
+        return pytesseract.image_to_string(img)
+    except Exception as e:
+        logging.error(f"Image processing failed: {e}")
+        return ""
+
 # ----------- Streamlit UI ---------------------------
 st.set_page_config(page_title="AI Teacher Bot", page_icon="🤖")
 st.title("🤖 AI Teacher Bot")
-st.subheader("Ask your doubt and get help based on your performance!")
+st.subheader("Ask your doubt by typing or uploading an image!")
 
 student_data = load_student_data()
 student_name = st.text_input("Enter your name:")
@@ -91,12 +100,25 @@ if student_name:
         feedback = f"Hi {student_name}, your average score is {avg_marks:.2f}."
     else:
         feedback = f"Hi {student_name}, we couldn't find your data."
-
     st.success(feedback)
     speak(feedback)
 
-    question = st.text_area("Enter your doubt:")
-    if st.button("Get Answer") and question:
-        answer = get_gemini_answer(question, avg_marks)
-        st.info(answer)
-        speak(answer)
+    st.markdown("### 📷 Upload an image of your doubt (optional)")
+    uploaded_file = st.file_uploader("Upload Image", type=["png", "jpg", "jpeg"])
+
+    question = st.text_area("Or type your doubt here:")
+    
+    if st.button("Get Answer"):
+        # Get question from image if uploaded
+        if uploaded_file:
+            question_from_img = extract_text_from_image(uploaded_file)
+            st.markdown("**Extracted Text from Image:**")
+            st.code(question_from_img)
+            question = question_from_img if not question.strip() else question
+
+        if question:
+            answer = get_gemini_answer(question, avg_marks)
+            st.info(answer)
+            speak(answer)
+        else:
+            st.warning("Please type a doubt or upload an image.")
